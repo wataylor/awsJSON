@@ -915,4 +915,57 @@ public class JSONArray {
            throw new JSONException(e);
         }
     }
+ 
+    /** Convert a JSON array into a text files for a spreadsheet.  The file is used to
+     * inform a user, so problems are reported in it rather than throwing exceptions.
+     * @return tab-separated string builder containing a representation of the object.
+     * The <code>write</code> method above shows the pattern this method uses.
+     * which can be read into Excel
+     */
+    public StringBuilder writeAsTabSeparated() {
+      StringBuilder sb  = new StringBuilder(); // Used for the return
+      StringBuilder sb2 = new StringBuilder(); // used for each row of the array
+      int     len = length();
+      if (len <= 0) { return null; }
+
+      Object aRow;
+      aRow = this.myArrayList.get(0); // get first row for excel header row
+      if (!(aRow instanceof JSONObject)) {
+	sb.append("ERR writeAsTabSeparated element 0 is not a JSONObject");
+	return sb;
+      }
+      /* Header row - names of fields in the first element of the array  <codenames</code
+       * uses the iterator so the order of names and values will be the same.  */
+      {
+	JSONArray headerRow = ((JSONObject) aRow).names();
+	try {
+	  sb.append(headerRow.join("\t") + "\n");
+	} catch (JSONException e) {
+	  sb.append("ERR writeAsTabSeparated joining field names from element 0 "
+	      + e.toString());
+	}
+      }
+      for (int i = 0; i<len; i++) {
+	sb2.setLength(0);
+	String aKey = null;
+	try {
+	  aRow = this.getJSONObject(i);
+	  if (!(aRow instanceof JSONObject)) {
+	    sb.append("ERR writeAsTabSeparated element " + i + " is not a JSONObject");
+	    return sb;
+	  }
+	  Iterator  keys = ((JSONObject) aRow).keys();
+	  while (keys.hasNext()) {
+	    if (sb2.length() > 0) { sb2.append("\t"); }
+	    sb2.append(JSONObject.valueToString(((JSONObject) aRow).getString(aKey = keys.next().toString())));
+	  }
+	  sb2.append("\n");
+	  sb.append(sb2);
+	} catch (JSONException e) {
+	  sb.append("ERR writeAsTabSeparated getting value for field name " + aKey + " "
+	      + e.toString());
+	}
+      }
+      return sb;
+    }
 }
